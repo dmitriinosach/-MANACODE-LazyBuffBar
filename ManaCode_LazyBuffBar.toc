@@ -1,0 +1,54 @@
+## Interface: 30300
+## Title: |cff3399ff[manacode]|r LazyBuffBar
+## Title-ruRU: |cff3399ff[manacode]|r LazyBuffBar |cff808080— панель бафов|r
+## Notes: Buff bar: what to keep up for your class and spec
+## Notes-ruRU: Панель бафов: что держать твоему классу и спеку
+## Author: Dmitry
+## Version: 0.1.0-beta.1
+## X-Date: 2026-10-05
+## SavedVariables: LazyBuffBarDB
+## SavedVariablesPerCharacter: LazyBuffBarCharDB
+## OptionalDeps: HTP_Notify
+
+data\specs.lua
+core\locale.lua
+locale\ruRU.lua
+core\context.lua
+core\compat.lua
+core\profile.lua
+ui\themes.lua
+ui\kit.lua
+ui\check.lua
+ui\look.lua
+ui\snap.lua
+data\classes\deathknight\registry.lua
+data\classes\druid\registry.lua
+data\classes\hunter\registry.lua
+data\classes\mage\registry.lua
+data\classes\paladin\registry.lua
+data\classes\priest\registry.lua
+data\classes\rogue\registry.lua
+data\classes\shaman\registry.lua
+data\classes\warlock\registry.lua
+data\classes\warrior\registry.lua
+core\buffs.lua
+data\profiles.lua
+data\incoming.lua
+data\trinkets.lua
+core\group.lua
+core\incoming.lua
+core\paladin.lua
+core\trinket.lua
+core\track.lua
+core\watch.lua
+core\notify.lua
+data\dungeons\icc.lua
+core\where.lua
+core\watch\rebuff.lua
+ui\buffbar.lua
+ui\fade.lua
+ui\barmenu.lua
+ui\settings.lua
+ui\chrome.lua
+ui\options.lua
+core\init.lua

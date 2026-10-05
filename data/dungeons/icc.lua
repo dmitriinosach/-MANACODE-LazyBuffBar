@@ -1,0 +1,178 @@
+local ADDON, ns = ...
+ns.dungeons = ns.dungeons or {}
+ns.dungeons.icc = {
+    maps = {
+        [1] = { area = "IcecrownCitadel", floor = 1, flip = true,
+                calib = { ax = 0.961559, bx = 0.006594, ay = 0.866950, by = -0.004694 } },
+        [2] = { area = "IcecrownCitadel", floor = 6 },
+    },
+    order = {
+        "trash_entrance", "trash_gate", "marrowgar", "trash_lady", "deathwhisper", "trash_ships", "gunship", "saurfang", "trash_plague", "festergut", "rotface", "putricide", "trash_crimson", "council", "lanathel", "trash_frost", "valithria", "trash_sindragosa", "sindragosa", "lichking"
+    },
+    loc = {
+        trash_entrance = {
+            kind = "corridor", nav = true, name = "Вход", map = 1,
+            crop = { 0.3176, 0.4466, 0.0408, 0.257 },
+            span = { from = { x = 0.3815, y = 0.0541 }, to = { x = 0.3817, y = 0.2272 } },
+            npcs = { 37687, 38316, 37120 },
+            shapes = {
+                { id = "s1", form = "point", x = 0.382, y = 0.0578,
+                  note = "Вход в цитадель" },
+                { id = "s2", form = "point", x = 0.3813, y = 0.1432,
+                  note = "Транспортёр Плети: отсюда прыгаешь по этажам" },
+                { id = "z1", form = "circle", x = 0.3822, y = 0.1893, r = 22,
+                  note = "Жди сбора здесь: общие бафы, рыба, шкаф чернокнижника" },
+                { id = "z2", form = "circle", x = 0.3815, y = 0.2282, r = 8,
+                  note = "До сбора сюда не заходи: отсюда цепляются первые враги" },
+                { id = "s3", form = "point", x = 0.357, y = 0.1762,
+                  note = "Чини снаряжение тут" },
+                { id = "s4", form = "point", x = 0.328, y = 0.2031,
+                  note = "Портал в Даларан" },
+                { id = "s5", form = "point", x = 0.3923, y = 0.1831,
+                  note = "Кольцо за репутацию" },
+                { id = "s6", form = "point", x = 0.4199, y = 0.1991,
+                  note = "Задание на легендарное оружие: дк, воин, паладин" },
+            },
+        },
+        trash_gate = {
+            kind = "corridor", map = 1,
+            crop = { 0.3163, 0.4456, 0.2593, 0.45 },
+            span = { from = { x = 0.3816, y = 0.2629 }, to = { x = 0.3811, y = 0.4421 } },
+            npcs = { 36725, 36724, 37011 },
+            shapes = {
+                { id = "s1", form = "point", x = 0.3814, y = 0.2699,
+                  note = "Здесь стоит первая группа врагов" },
+                { id = "s2", form = "point", x = 0.3718, y = 0.2588,
+                  note = "Жди тут: танк приведёт врагов и отвернёт их от рейда" },
+                { id = "z1", form = "circle", x = 0.3816, y = 0.3111, r = 49 },
+                { id = "z2", form = "circle", x = 0.3718, y = 0.3734, r = 8,
+                  note = "Стой за стеной, пока танк ведёт врагов" },
+                { id = "z3", form = "circle", x = 0.3818, y = 0.4198, r = 8,
+                  note = "Вторая комната: враги и ловушки, всё как в первой" },
+            },
+        },
+        marrowgar = {
+            kind = "boss", map = 1,
+            crop = { 0.3085, 0.4534, 0.4501, 0.6381 },
+            boss = { x = 0.3811, y = 0.5231 },
+            phases = { { n = 0, t = "Подготовка" }, { n = 1, t = "1 фаза" },
+                       { n = 2, t = "Фаза 2. Фаза вихря" } },
+            npcs = { 36612 },
+            shapes = {
+                { id = "z1", form = "circle", x = 0.3812, y = 0.4768, r = 14,
+                  note = "Жди сбора здесь, до пула не подходи" },
+                { id = "z2", form = "circle", x = 0.3818, y = 0.5094, r = 8, phase = 1,
+                  note = "Стой тут: ближние, дальние и хилы вместе" },
+                { id = "s1", form = "point", x = 0.3629, y = 0.5187, phase = 2,
+                  note = "Вихрь: первый танк отбегает сюда" },
+                { id = "s2", form = "point", x = 0.4018, y = 0.5231, phase = 2,
+                  note = "Вихрь: второй танк отбегает в другую сторону" },
+                { id = "z3", form = "circle", x = 0.3815, y = 0.5098, r = 8, phase = 2,
+                  note = "Вихрь: держись места и уходи из-под огня" },
+            },
+        },
+        trash_lady = {
+            kind = "corridor",
+        },
+        deathwhisper = {
+            kind = "boss",
+        },
+        trash_ships = {
+            kind = "corridor",
+        },
+        gunship = {
+            kind = "boss",
+        },
+        saurfang = {
+            kind = "boss",
+        },
+        trash_plague = {
+            kind = "corridor",
+        },
+        festergut = {
+            kind = "boss",
+        },
+        rotface = {
+            kind = "boss",
+        },
+        putricide = {
+            kind = "boss",
+        },
+        trash_crimson = {
+            kind = "corridor",
+        },
+        council = {
+            kind = "boss",
+        },
+        lanathel = {
+            kind = "boss", map = 2,
+            crop = { 0.387, 0.6082, 0.2165, 0.5913 },
+            calib = { ax = 0.939218, bx = 0.020182, ay = 0.880444, by = -0.007590 },
+            boss = { x = 0.5003, y = 0.2667 },
+            phases = {
+                { n = 0, t = "Подготовка" },
+                { n = 1, t = "Фаза 1 - бой" },
+                { n = 2, t = "Фаза 2 - взлётка" },
+            },
+            npcs = { 37955 },
+            shapes = {
+                { id = "t1", form = "point", x = 0.504, y = 0.2601, role = "tank", phase = 1,
+                  note = "Держи босса тут всю фазу" },
+                { id = "t2", form = "point", x = 0.4971, y = 0.26, role = "tank", phase = 1 },
+                { id = "z1", form = "circle", x = 0.5011, y = 0.2874, r = 8, phase = 1,
+                  note = "Стой за боссом всю фазу" },
+                { id = "r1", form = "point", x = 0.5317, y = 0.3524, role = "rdd", phase = 1 },
+                { id = "r2", form = "point", x = 0.5538, y = 0.3291, role = "rdd", phase = 1 },
+                { id = "r3", form = "point", x = 0.4696, y = 0.3514, role = "rdd", phase = 1 },
+                { id = "r4", form = "point", x = 0.4395, y = 0.3347, role = "rdd", phase = 1 },
+                { id = "r5", form = "point", x = 0.5017, y = 0.2916, role = "rdd", phase = 1 },
+                { id = "s1", form = "point", x = 0.4525, y = 0.2653, phase = 1,
+                  note = "Тени под ногами: беги вдоль левой стены" },
+                { id = "s2", form = "point", x = 0.4209, y = 0.3055, phase = 1,
+                  note = "Не сворачивай: лужа льётся следом" },
+                { id = "s3", form = "point", x = 0.4086, y = 0.4107, phase = 1,
+                  note = "Тут тени кончаются, возвращайся к рейду" },
+                { id = "s4", form = "point", x = 0.5437, y = 0.2639, phase = 1,
+                  note = "То же вдоль правой стены" },
+                { id = "s5", form = "point", x = 0.5936, y = 0.3549, phase = 1 },
+                { id = "s6", form = "point", x = 0.5892, y = 0.4389, phase = 1,
+                  note = "Тут тени кончаются, возвращайся к рейду" },
+                { id = "s7", form = "point", x = 0.5007, y = 0.3789, phase = 1,
+                  note = "Конец фазы: перед взлётом босс наводит страх" },
+                { id = "s8", form = "point", x = 0.5005, y = 0.3792, phase = 2,
+                  note = "Босс взлетает отсюда" },
+                { id = "t3", form = "point", x = 0.5218, y = 0.2585, role = "tank", phase = 2,
+                  note = "Танки остаются здесь" },
+                { id = "t4", form = "point", x = 0.4816, y = 0.2616, role = "tank", phase = 2,
+                  note = "Позиция второго танка" },
+                { id = "z2", form = "ring", x = 0.5005, y = 0.3786, rin = 14, rout = 16,
+                  role = "heal", phase = 2,
+                  note = "Встань в кольцо, 8 ярдов от соседа" },
+                { id = "z3", form = "ring", x = 0.501, y = 0.3786, rin = 34, rout = 40,
+                  role = "rdd", phase = 2,
+                  note = "Внешнее кольцо, 8 ярдов от соседа" },
+                { id = "z4", form = "circle", x = 0.5007, y = 0.5189, r = 8,
+                  role = "mdd", phase = 2,
+                  note = "Ближним разбегаться сюда" },
+                { id = "t5", form = "point", x = 0.5002, y = 0.3789, phase = 2,
+                  note = "Босс приземлится тут, сбегайся к нему" },
+            },
+        },
+        trash_frost = {
+            kind = "corridor",
+        },
+        valithria = {
+            kind = "boss",
+        },
+        trash_sindragosa = {
+            kind = "corridor",
+        },
+        sindragosa = {
+            kind = "boss",
+        },
+        lichking = {
+            kind = "boss",
+        },
+    },
+}
+ns.dungeonsLoaded_icc = true

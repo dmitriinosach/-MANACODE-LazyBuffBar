@@ -1,0 +1,166 @@
+local ADDON, ns = ...
+local S = {
+    battle    = 47436,
+    command   = 47440,
+    vigil     = 50720,
+    bt        = 23881,
+    ww        = 1680,
+    dw        = 12292,
+    reck      = 1719,
+    bloodrage = 2687,
+    berserk   = 18499,
+    hfury     = 60970,
+    surge     = 46916,
+    surgeTal  = 46913,
+    flurry    = 12970,
+    flurryTal = 12319,
+    ms        = 47486,
+    storm     = 46924,
+    sweep     = 12328,
+    shatter   = 64382,
+    rend      = 47465,
+    wounds    = 12721,
+    woundsTal = 12834,
+    tfb       = 60503,
+    tfbTal    = 56636,
+    sd        = 52437,
+    sdTal     = 29723,
+    wcEnrage  = 57522,
+    wcTal     = 46867,
+    frenzy    = 29836,
+    op        = 7384,
+    slam      = 47488,
+    revenge   = 57823,
+    shock     = 46968,
+    concuss   = 12809,
+    block     = 2565,
+    stand     = 12975,
+    wall      = 871,
+    taunt     = 355,
+    reflect   = 23920,
+    bash      = 72,
+    chall     = 1161,
+    regen     = 55694,
+    sunder    = 47467,
+    clap      = 47502,
+    demo      = 47437,
+    snb       = 50227,
+    snbTal    = 46951,
+    berserking = 59620,
+    mongoose   = 28093,
+    bladeWard  = 64440,
+}
+local FLASK_RAGE  = { item = 46377, aura = 53760 }
+local FLASK_STONE = { item = 46379, aura = 53758 }
+local FOOD_FEAST  = { item = 43015, aura = 57399 }
+local FOOD_ARP    = { item = 42995, aura = 57358 }
+local FOOD_EXP    = { item = 42994, aura = 57356 }
+local FOOD_HIT    = { item = 42996, aura = 57360 }
+local POT_SPEED   = 40211
+local POT_ARMOR   = 40093
+local POT_HEALTH  = 33447
+local ARMORED     = 61216
+ns.rotation = ns.rotation or {}
+ns.rotation.WARRIOR = {
+    arms = {
+        buffs      = nil,
+        raidBuffs  = { { id = S.battle,  soft = true },
+                       { id = S.command, soft = true } },
+        flask      = FLASK_RAGE,
+        food       = { FOOD_FEAST, FOOD_ARP },
+        potions    = {
+            POT_SPEED,
+            { item = POT_ARMOR, via = ARMORED,
+              note = "{i:40093} — броня от неё идёт в силу атаки." },
+        },
+        track = {
+            procs = {
+                { id = S.tfb, needs = S.tfbTal, note = "Кровопускание открыло {s:7384}: жать сразу, окно 9 секунд и не чаще раза в 6 секунд." },
+                { id = S.sd, needs = S.sdTal, note = "Казнь доступна на любом здоровье цели: жать по проку, часть ярости останется." },
+                { id = S.wcEnrage, needs = S.wcTal, note = "Висит сам от критов: 10% к урону. Бурст и Вихрь клинков — под него." },
+                { id = S.berserking, needs = true, off = true, note = "Прок зачарования оружия: скорость атаки выше на 10 сек. Включи, если носишь Берсерка." },
+                { id = S.mongoose, needs = true, off = true, note = "Прок зачарования оружия: ловкость и скорость на 15 сек. Включи, если носишь Мангуста." },
+            },
+            cds = {
+                { id = S.ms, note = "Жать по откату: главный удар ротации, заодно режет лечение цели." },
+                { id = S.storm, note = "Жать по откату на пуле и дальше; 6 секунд другие удары недоступны, ярость копи заранее." },
+                { id = S.reck, note = "Три гарантированных крита: в связке с Вихрем клинков и Смертельным ударом." },
+                { id = S.bloodrage, note = "Ярость перед пулом и когда её не хватает на Смертельный удар." },
+                { id = S.sweep, off = true, note = "Две и больше цели рядом: следующие удары задевают ещё одну." },
+                { id = S.shatter, off = true, note = "Броня цели на 20% ниже на 10 секунд: под общий бурст рейда, заодно снимает неуязвимость." },
+                { id = S.berserk, off = true, note = "Снять страх с оглушением, заодно копится ярость." },
+            },
+            dots = {
+                { id = S.rend, note = "Держать без провалов: с него идёт {s:60503}, и вместе с Глубокими ранами он держит {s:29836} рейду." },
+                { id = S.wounds, needs = S.woundsTal, note = "Тикает сам от критов. Нет на цели долго — проверь талант." },
+            },
+        },
+    },
+    fury = {
+        buffs      = nil,
+        raidBuffs  = { { id = S.battle,  soft = true },
+                       { id = S.command, soft = true } },
+        flask      = FLASK_RAGE,
+        food       = { FOOD_FEAST, FOOD_ARP },
+        potions    = {
+            POT_SPEED,
+            { item = POT_ARMOR, via = ARMORED,
+              note = "{i:40093} — броня от неё идёт в силу атаки." },
+        },
+        track = {
+            procs = {
+                { id = S.surge, needs = S.surgeTal, note = "жать Мощный удар сразу, иначе прок сгорит." },
+                { id = S.flurry, needs = S.flurryTal, note = "скорость атаки на три взмаха с любого крита: держится сам, пока бьёшь." },
+                { id = S.berserking, needs = true, off = true, note = "прок зачарования оружия: скорость атаки выше на 10 сек. Включи, если носишь Берсерка." },
+                { id = S.mongoose, needs = true, off = true, note = "прок зачарования оружия: ловкость и скорость на 15 сек. Включи, если носишь Мангуста." },
+            },
+            cds = {
+                { id = S.bt,        note = "жать по кд, это фундамент ротации." },
+                { id = S.ww,        note = "жать по кд, сразу следом за Кровожадностью." },
+                { id = S.dw,        note = "крутить по кд, не беречь." },
+                { id = S.reck,      note = "жать под бурст, урон по тебе тоже растёт." },
+                { id = S.bloodrage, note = "нагенерить ярость перед пулом и когда её нет." },
+                { id = S.berserk,   note = "снять страх с оглушением, заодно копится ярость." },
+                { id = S.hfury,     note = "сбросить обездвиживание и вернуть Перехват." },
+            },
+        },
+    },
+    prot = {
+        buffs      = nil,
+        raidBuffs  = { { id = S.battle,  soft = true },
+                       { id = S.command, soft = true },
+                       { id = S.vigil, single = true,
+                         note = "Повесить на сильнейшего бойца: 10% его угрозы уходит тебе, а удар по нему сбрасывает откат Провокации." } },
+        flask      = FLASK_STONE,
+        food       = { FOOD_FEAST, FOOD_EXP, FOOD_HIT },
+        potions    = { POT_ARMOR, POT_HEALTH },
+        track = {
+            procs = {
+                { id = S.snb, needs = S.snbTal, note = "Откат {s:47488} сброшен, удар бесплатный: жать сразу, прок живёт 5 секунд." },
+                { id = S.mongoose, needs = true, off = true, note = "Прок зачарования оружия: ловкость, а с ней уклонение и броня. Включи, если носишь Мангуста." },
+                { id = S.bladeWard, needs = true, off = true, note = "Прок зачарования оружия: парирование выше на 10 сек. Включи, если носишь Отведение удара." },
+            },
+            cds = {
+                { id = S.slam, note = "Главное агро: жать по откату и по каждому проку Щита и меча." },
+                { id = S.revenge, note = "Дешёвое агро после блока, уклонения или парирования: жать, как только загорелось." },
+                { id = S.shock, note = "Оглушение и агро по пачке перед собой, на боссе — как удар в ротации." },
+                { id = S.concuss, note = "Урон и угроза в ротации; оглушение пригодится на аддах." },
+                { id = S.block, note = "Под тяжёлый удар босса и под Мощный удар щитом: его урон растёт от показателя блока." },
+                { id = S.stand, note = "Сейв: запас здоровья выше на 30%. Жать заранее, пока лекари успевают долить." },
+                { id = S.wall, note = "Главный сейв: урон по тебе ниже на 60% на 12 секунд." },
+                { id = S.taunt, note = "Вернуть цель, которая ушла с тебя." },
+                { id = S.reflect, off = true, note = "Отразить заклинание обратно: под известный каст по танку." },
+                { id = S.bash, off = true, note = "Прерывание каста щитом." },
+                { id = S.chall, off = true, note = "Массовая провокация на 6 секунд: когда адды разбежались по рейду." },
+                { id = S.regen, off = true, note = "Лечение на 30% здоровья за 10 секунд: нужен эффект исступления, жать вместе с Кровавой яростью." },
+                { id = S.bloodrage, off = true, note = "Ярость на пуле и в провалах по ярости." },
+                { id = S.berserk, off = true, note = "Снять страх с оглушением, заодно копится ярость." },
+            },
+            dots = {
+                { id = S.sunder, note = "Пять стаков держит Сокрушение: броня цели ниже на 20% для всего рейда." },
+                { id = S.clap, note = "Скорость атаки цели ниже на 10%. Не складывается с аналогами рыцаря смерти, друида и паладина." },
+                { id = S.demo, note = "Сила атаки цели ниже. Рёв друида и Проклятие слабости его заменяют — не держи вдвоём." },
+            },
+        },
+    },
+}
