@@ -1,0 +1,23 @@
+local _, ns = ...
+ns.widgetData = ns.widgetData or {}
+ns.widgetData.rogue_combat_spree = {
+    spree       = 51690,
+    spreeAura   = 61851,
+    ar          = 13750,
+    snd         = 6774,
+    sndAlt      = 5171,
+    power       = 3,
+    spare       = 45,
+    capFallback = 55,
+    caps        = { 30, 70 },
+    sndMin      = 3,
+    gcd         = 1.5,
+    tick        = 0.5,
+    dim         = 0.4,
+    auraMax     = 40,
+    dur         = 2,
+    range       = 3,
+    bar         = { 0.3, 0.85, 0.3, 1 },
+    barHigh     = { 1, 0.82, 0.2, 1 },
+}
+ns.rogueCombatSpreeDataLoaded = true

@@ -1,4 +1,4 @@
-local ADDON, ns = ...
+local _, ns = ...
 local TICK = 1
 local OWN = { PLAYER_LOGIN = true }
 local list = {}
@@ -22,6 +22,10 @@ function ns.WatchEnabled(id)
     local v = db and db.on[id]
     if v == nil then return true end
     return v and true or false
+end
+function ns.WatchKnob(id, n)
+    local w = byId[id]
+    return w and w.knobs and w.knobs[n or 1] or nil
 end
 function ns.SetWatchEnabled(id, on)
     local db = ns.WatchDB()

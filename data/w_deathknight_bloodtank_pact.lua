@@ -1,0 +1,20 @@
+local _, ns = ...
+ns.widgetData = ns.widgetData or {}
+ns.widgetData.dk_pact = {
+    pact     = 48743,
+    raise    = 46584,
+    life     = 60,
+    dust     = 37201,
+    per      = 0.4,
+    vamp     = 55233,
+    vampMul  = 1.35,
+    cost     = 40,
+    gcd      = 1.5,
+    master   = 52143,
+    glows    = { 30, 40, 50 },
+    glow     = 40,
+    tick     = 1,
+    dim      = 0.6,
+    tint     = { 0.5, 0.5, 1, 1 },
+}
+ns.dkPactDataLoaded = true

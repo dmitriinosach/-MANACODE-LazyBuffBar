@@ -1,0 +1,11 @@
+local _, ns = ...
+ns.locales = ns.locales or {}
+ns.locales.ruRU = ns.locales.ruRU or {}
+ns.locales.ruRU.widget = ns.locales.ruRU.widget or {}
+local L = ns.locales.ruRU.widget
+L.druid_bear_rage       = "Ярость и Трепка"
+L.druid_bear_rage_one   = "клетка 1x1"
+L.druid_bear_rage_queue = "число и Трепка 2x1"
+L.druid_bear_rage_bar   = "полоса 3x1"
+L.druid_bear_rage_info  = "Ярость медведя и очередь Трепки.\nЧисло тусклое — ярости меньше цены Увечья. Золотое и Трепка светится — пора слить ярость в Трепку или висит Ясность мысли.\nЗелёная рамка — Трепка в очереди. Жёлтая — после неё не хватит на Увечье.\nНа полосе — метки цен Растерзать и Увечья.\nКлик по Трепке ставит её в очередь.\nВне облика медведя пусто, вне боя без ярости — тоже."
+L.dbr_clarity           = "%s: %s бесплатно"

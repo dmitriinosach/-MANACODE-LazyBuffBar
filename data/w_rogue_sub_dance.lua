@@ -1,0 +1,20 @@
+local _, ns = ...
+ns.widgetData = ns.widgetData or {}
+ns.widgetData.rogue_sub_dance = {
+    dance      = 51713,
+    premed     = 14183,
+    ambush     = 48691,
+    ambushCost = 60,
+    power      = 3,
+    save       = 80,
+    saves      = { 60, 100 },
+    premedWait = 3,
+    gcd        = 1.5,
+    tick       = 0.5,
+    dim        = 0.4,
+    auraMax    = 40,
+    dur        = 6,
+    barWin     = { 0.3, 0.85, 0.3, 1 },
+    barSave    = { 1, 0.82, 0.2, 1 },
+}
+ns.rogueSubDanceDataLoaded = true

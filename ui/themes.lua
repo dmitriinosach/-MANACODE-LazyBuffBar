@@ -1,34 +1,49 @@
-local ADDON, ns = ...
+local _, ns = ...
 ns.themes = {}
+ns.EDIT = {
+    backdrop = {
+        bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = false, edgeSize = 12,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 },
+    },
+    bg       = { 0.04, 0.05, 0.13, 0.95 },
+    bg2      = { 0.08, 0.1, 0.23, 0.96 },
+    border   = { 0.37, 0.39, 0.5, 1 },
+    gold     = { 1, 0.82, 0 },
+    gold2    = { 0.79, 0.66, 0.36 },
+    text     = { 0.91, 0.9, 0.86 },
+    white    = { 1, 1, 1 },
+    mute     = { 0.61, 0.62, 0.68 },
+    line     = { 0.23, 0.25, 0.36, 1 },
+    dark     = { 0.02, 0.03, 0.1, 1 },
+    btn      = { 0.13, 0.15, 0.27, 0.95 },
+    btnHover = { 0.2, 0.23, 0.4, 0.95 },
+    mana     = { 0.29, 0.64, 1 },
+    bad      = { 1, 0.35, 0.35 },
+    ok       = { 0.24, 0.86, 0.24 },
+}
+ns.STATE = {
+    ok     = { 0.3, 0.85, 0.3, 1 },
+    soon   = { 1, 0.8, 0.1, 1 },
+    none   = { 0.9, 0.2, 0.2, 1 },
+    bad    = { 0.9, 0.2, 0.2, 1 },
+    off    = { 0.25, 0.25, 0.3, 1 },
+    full   = { 1, 0.82, 0, 1 },
+    text   = { 1, 1, 1, 1 },
+    mute   = { 0.4, 0.4, 0.45, 1 },
+    energy = { 1, 0.85, 0.15, 1 },
+    stack  = { 0.6, 1, 0.48, 1 },
+    combo  = { 1, 0.42, 0.18, 1 },
+}
 local ACH_CAT       = "Interface\\AchievementFrame\\UI-Achievement-Category-Background"
 local ACH_BAR_COORD = { 0, 0.6640625, 0, 0.796875 }
 local DLG_INSET     = { left = 11, right = 12, top = 12, bottom = 11 }
 local ACCENT = { 0.22, 0.72, 0.32 }
-ns.ACCENT = ACCENT
-ns.LINK = { 0.4, 0.85, 1.0 }
 ns.QMARK = "Interface\\Icons\\INV_Misc_QuestionMark"
-local COIN = "|TInterface\\MoneyFrame\\UI-%sIcon:12:12:2:0|t"
-function ns.GoldString(copper)
-    if not copper or copper <= 0 then return nil end
-    local g = math.floor(copper / 10000)
-    local s = math.floor((copper % 10000) / 100)
-    local c = copper % 100
-    local out = {}
-    if g > 0 then out[#out + 1] = g .. COIN:format("Gold") end
-    if s > 0 then out[#out + 1] = s .. COIN:format("Silver") end
-    if c > 0 or #out == 0 then out[#out + 1] = c .. COIN:format("Copper") end
-    return table.concat(out, " ")
-end
-function ns.ClassColor(token)
-    local pal = _G.CUSTOM_CLASS_COLORS or _G.RAID_CLASS_COLORS
-    local c = token and pal and pal[token]
-    if not c then return { 1, 1, 1 } end
-    return { c.r, c.g, c.b }
-end
 local PRIMARY = { 1, 1, 1 }
 local SECONDARY = { 1, 1, 1 }
 ns.themes.parchment = {
-    label = "Пергамент", labelKey = "settings.theme.parchment",
+    labelKey = "settings.theme.parchment",
     window = {
         backdrop = {
             bgFile   = "Interface\\AchievementFrame\\UI-Achievement-Parchment-Horizontal",
@@ -108,6 +123,47 @@ ns.themes.parchment = {
         markColor     = { ACCENT[1] + 0.3, 1, ACCENT[3] + 0.3, 1 },
         label         = PRIMARY,
         labelHover    = { 1, 1, 1 },
+        labelOff      = { 0.45, 0.45, 0.45 },
+        boxColorOff   = { 0.5, 0.5, 0.5, 1 },
+    },
+    slider = {
+        track    = { 1, 1, 1, 0.16 },
+        fill     = { 1, 0.82, 0.3, 0.72 },
+        thumb    = { 0.72, 0.78, 0.86, 1 },
+        thumbHot = { 0.96, 0.98, 1, 1 },
+        thumbOff = { 0.4, 0.4, 0.42, 1 },
+        text     = PRIMARY,
+        textOff  = { 0.45, 0.45, 0.45 },
+        note     = { 1, 0.6, 0.2 },
+    },
+    segment = {
+        bg         = { 0, 0, 0, 0.45 },
+        hover      = { 1, 1, 1, 0.06 },
+        text       = SECONDARY,
+        textHover  = { 1, 1, 1 },
+        textActive = { 1, 1, 1 },
+        textOff    = { 0.45, 0.45, 0.45 },
+        indicator  = { 1, 0.82, 0.25, 1 },
+        border     = { 1, 0.82, 0, 0.5 },
+    },
+    edit = {
+        backdrop = {
+            bgFile   = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+            tile = false, edgeSize = 12,
+            insets = { left = 3, right = 3, top = 3, bottom = 3 },
+        },
+        bg          = { 0, 0, 0, 0.5 },
+        border      = { 1, 0.82, 0, 0.5 },
+        borderFocus = { 1, 0.82, 0, 1 },
+        text        = { 1, 1, 1 },
+        textOff     = { 0.45, 0.45, 0.45 },
+        ghost       = { 0.6, 0.6, 0.6 },
+    },
+    swatch = {
+        border      = { 1, 0.82, 0, 0.65 },
+        borderHover = { 1, 0.82, 0, 1 },
+        borderOff   = { 0.45, 0.45, 0.45, 0.6 },
     },
     bossRow = {
         tex       = ACH_CAT,
@@ -140,9 +196,6 @@ local ACH_BG = "Interface\\AchievementFrame\\UI-Achievement-AchievementBackgroun
 local WHITE  = "Interface\\Buttons\\WHITE8X8"
 local PVP_TEX     = "Interface\\PVPFrame\\UI-Character-PVP"
 local PVP_STRIP   = { 0, 0.65625, 0.1875, 0.2305 }
-local PVP_ENGRAVE = { 0, 0.65625, 0.2383, 0.7617 }
-local LFG_FILIGREE       = "Interface\\LFGFrame\\UI-LFG-FILIGREE"
-local LFG_FILIGREE_COORD = { 0, 0.5996094, 0.03125, 0.8984375 }
 local LFG_WALL      = "Interface\\LFGFrame\\UI-LFG-BACKGROUND-DUNGEONWALL"
 local STONE_SLAB  = "Interface\\ItemTextFrame\\ItemText-Stone-TopLeft"
 local SLAB_COORD  = { 0.03125, 1, 0.046875, 1 }
@@ -161,7 +214,7 @@ local function panelOf(edgeFile, bg)
     }
 end
 ns.themes.flat = {
-    label = "Плоский", labelKey = "settings.theme.flat",
+    labelKey = "settings.theme.flat",
     window = {
         backdrop = {
             bgFile   = TIP_BG,
@@ -194,9 +247,16 @@ ns.themes.flat = {
     card = { bg = { 1, 1, 1, 0.05 }, frame = { edgeFile = TIP_EDGE, edgeSize = 12,
              color = { 0.45, 0.52, 0.62, 0.8 }, over = 1 } },
     panel = panelOf(TIP_EDGE, { 0, 0, 0, 0.9 }),
+    slider  = { fill = { 0.45, 0.78, 1.0, 0.7 }, thumb = { 0.72, 0.80, 0.9, 1 },
+                thumbHot = { 0.9, 0.96, 1, 1 }, note = { 1, 0.62, 0.25 } },
+    segment = { bg = { 0, 0, 0, 0.55 }, indicator = { 0.45, 0.78, 1.0, 1 },
+                border = { 0.45, 0.52, 0.62, 0.6 } },
+    edit    = { bg = { 0.02, 0.025, 0.03, 0.9 }, border = { 0.42, 0.47, 0.54, 1 },
+                borderFocus = { 0.45, 0.78, 1.0, 1 } },
+    swatch  = { border = { 0.42, 0.47, 0.54, 0.9 }, borderHover = { 0.45, 0.78, 1.0, 1 } },
 }
 ns.themes.pvp = {
-    label = "Поле боя", labelKey = "settings.theme.pvp",
+    labelKey = "settings.theme.pvp",
     window = {
         backdrop = {
             bgFile = DLG_BG, edgeFile = DLG_GOLD,
@@ -225,9 +285,14 @@ ns.themes.pvp = {
     card = { bg = { 0, 0, 0, 0.35 }, frame = { edgeFile = TIP_EDGE, edgeSize = 12,
              color = { 0.78, 0.81, 0.88, 0.7 }, over = 1 } },
     panel = panelOf(DLG_EDGE, { 0.05, 0.06, 0.07, 0.72 }),
+    slider  = { fill = { 0.95, 0.86, 0.55, 0.75 }, thumb = { 0.78, 0.81, 0.88, 1 },
+                thumbHot = { 0.98, 0.98, 1, 1 } },
+    segment = { indicator = { 0.95, 0.86, 0.55, 1 }, border = { 0.78, 0.81, 0.88, 0.5 } },
+    edit    = { border = { 0.78, 0.81, 0.88, 0.7 }, borderFocus = { 0.95, 0.86, 0.55, 1 } },
+    swatch  = { border = { 0.78, 0.81, 0.88, 0.7 }, borderHover = { 0.95, 0.86, 0.55, 1 } },
 }
 ns.themes.lfg = {
-    label = "Подземелье", labelKey = "settings.theme.lfg",
+    labelKey = "settings.theme.lfg",
     window = {
         backdrop = {
             bgFile = DLG_BG, edgeFile = DLG_EDGE,
@@ -259,9 +324,15 @@ ns.themes.lfg = {
     card = { bg = { 0, 0, 0, 0.38 }, frame = { edgeFile = TIP_EDGE, edgeSize = 12,
              color = { 0.92, 0.78, 0.45, 0.6 }, over = 1 } },
     panel = panelOf(DLG_EDGE, { 0.07, 0.06, 0.04, 0.72 }),
+    slider  = { fill = { 0.55, 0.80, 1.0, 0.7 }, thumb = { 0.92, 0.78, 0.45, 1 },
+                thumbHot = { 1, 0.92, 0.7, 1 } },
+    segment = { indicator = { 0.55, 0.80, 1.0, 1 }, border = { 0.92, 0.78, 0.45, 0.5 } },
+    edit    = { bg = { 0.04, 0.03, 0.02, 0.6 }, border = { 0.92, 0.78, 0.45, 0.6 },
+                borderFocus = { 0.55, 0.80, 1.0, 1 } },
+    swatch  = { border = { 0.92, 0.78, 0.45, 0.7 }, borderHover = { 0.55, 0.80, 1.0, 1 } },
 }
 ns.themes.gold = {
-    label = "Тёмное золото", labelKey = "settings.theme.gold",
+    labelKey = "settings.theme.gold",
     window = {
         backdrop = {
             bgFile = DLG_DARK, edgeFile = WOOD_EDGE,
@@ -288,9 +359,17 @@ ns.themes.gold = {
     card = { bg = { 0, 0, 0, 0.35 }, frame = { edgeFile = TIP_EDGE, edgeSize = 12,
              color = { 1, 0.84, 0.4, 0.55 }, over = 1 } },
     panel = panelOf(DLG_GOLD, { 0.08, 0.06, 0.02, 0.72 }),
+    slider  = { track = { 0, 0, 0, 0.35 }, fill = { 1, 0.86, 0.35, 0.8 },
+                thumb = { 0.9, 0.74, 0.38, 1 }, thumbHot = { 1, 0.92, 0.6, 1 },
+                thumbOff = { 0.45, 0.40, 0.32, 1 } },
+    segment = { bg = { 0, 0, 0, 0.5 }, indicator = { 1, 0.86, 0.35, 1 },
+                border = { 1, 0.78, 0.25, 0.5 } },
+    edit    = { bg = { 0.05, 0.035, 0.02, 0.8 }, border = { 0.55, 0.45, 0.30, 1 },
+                borderFocus = { 1, 0.86, 0.35, 1 } },
+    swatch  = { border = { 0.9, 0.74, 0.38, 0.8 }, borderHover = { 1, 0.86, 0.35, 1 } },
 }
 ns.themes.stone = {
-    label = "Камень", labelKey = "settings.theme.stone",
+    labelKey = "settings.theme.stone",
     window = {
         backdrop = {
             bgFile = DLG_BG, edgeFile = DLG_EDGE,
@@ -316,8 +395,52 @@ ns.themes.stone = {
     card = { bg = { 0, 0, 0, 0.38 }, frame = { edgeFile = TIP_EDGE, edgeSize = 12,
              color = { 0.65, 0.68, 0.74, 0.8 }, over = 1 } },
     panel = panelOf(DLG_EDGE, { 0.06, 0.06, 0.07, 0.72 }),
+    slider  = { fill = { 0.85, 0.88, 0.95, 0.6 }, thumb = { 0.70, 0.72, 0.78, 1 },
+                thumbHot = { 0.95, 0.96, 1, 1 } },
+    segment = { indicator = { 0.85, 0.88, 0.95, 1 }, border = { 0.70, 0.72, 0.78, 0.5 } },
+    edit    = { border = { 0.65, 0.68, 0.74, 0.8 }, borderFocus = { 0.85, 0.88, 0.95, 1 } },
+    swatch  = { border = { 0.65, 0.68, 0.74, 0.8 }, borderHover = { 0.85, 0.88, 0.95, 1 } },
 }
-ns.themeOrder = { "parchment", "stone", "pvp", "lfg", "gold", "flat" }
+local E = ns.EDIT
+local function withAlpha(c, a)
+    return { c[1], c[2], c[3], a or c[4] or 1 }
+end
+ns.themes.mockup = {
+    labelKey = "settings.theme.mockup",
+    window = {
+        backdrop = E.backdrop,
+        bgColor = withAlpha(E.bg2), borderColor = withAlpha(E.border),
+        decor = {
+            { tex = WHITE, grad = { dir = "VERTICAL", from = { E.bg[1], E.bg[2], E.bg[3], 0.9 }, to = { E.bg2[1], E.bg2[2], E.bg2[3], 0 } }, inset = 3 },
+        },
+    },
+    bossPlate = { color = withAlpha(E.gold2) },
+    tabbar = {
+        bar       = withAlpha(E.dark, 0.9),
+        frame     = { edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", edgeSize = 12, color = withAlpha(E.border), over = 2 },
+        underline = withAlpha(E.gold),
+        sep       = withAlpha(E.line),
+        textIdle  = E.mute,
+    },
+    button = {
+        backdrop = { bgFile = WHITE, edgeFile = WHITE, edgeSize = 1, insets = { left = 1, right = 1, top = 1, bottom = 1 } },
+        bg = withAlpha(E.btn), bgHover = withAlpha(E.btnHover), bgActive = withAlpha(E.btnHover), bgOff = withAlpha(E.dark, 0.8),
+        border = withAlpha(E.border), borderHover = withAlpha(E.gold), borderActive = withAlpha(E.gold), borderOff = withAlpha(E.line),
+        text = E.text, textHover = E.white, textActive = E.gold, textOff = E.mute,
+    },
+    check = { markColor = withAlpha(E.gold), label = E.text, labelOff = E.mute },
+    slider  = { track = withAlpha(E.line), fill = withAlpha(E.gold, 0.85), thumb = withAlpha(E.gold), thumbHot = { 1, 0.95, 0.6, 1 },
+                thumbOff = withAlpha(E.mute), text = E.white, textOff = E.mute, note = { 1, 0.6, 0.2 } },
+    segment = { bg = withAlpha(E.dark), hover = { 1, 1, 1, 0.08 }, text = E.mute, textHover = E.white, textActive = E.white,
+                textOff = withAlpha(E.mute, 0.5), indicator = withAlpha(E.gold), border = withAlpha(E.border) },
+    edit    = { bg = withAlpha(E.dark), border = withAlpha(E.line), borderFocus = withAlpha(E.gold), text = E.white, ghost = E.mute },
+    swatch  = { border = withAlpha(E.border), borderHover = withAlpha(E.gold), borderOff = withAlpha(E.line) },
+    card = { bg = { 1, 1, 1, 0.04 }, frame = { edgeFile = WHITE, edgeSize = 1, color = withAlpha(E.line), over = 1 } },
+    panel = panelOf("Interface\\Tooltips\\UI-Tooltip-Border", withAlpha(E.bg)),
+    bossRow = { bg = withAlpha(E.dark, 0.6), bgHover = withAlpha(E.btn), name = E.white, frame = { color = withAlpha(E.border), colorHover = withAlpha(E.gold) } },
+    bossCard = { bg = withAlpha(E.bg), name = E.gold, frame = { edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", color = withAlpha(E.border) } },
+}
+ns.themeOrder = { "mockup", "parchment", "stone", "pvp", "lfg", "gold", "flat" }
 local function deepCopy(src)
     if type(src) ~= "table" then return src end
     local out = {}

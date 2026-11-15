@@ -1,4 +1,4 @@
-local ADDON, ns = ...
+local _, ns = ...
 ns.profiles = {
     WARRIOR = {
         arms = { phys = true, melee = true },
@@ -19,6 +19,7 @@ ns.profiles = {
     ROGUE = {
         assassination = { phys = true, melee = true },
         combat        = { phys = true, melee = true },
+        subtlety      = { phys = true, melee = true },
     },
     PRIEST = {
         disc   = { spell = true, mana = true },
@@ -55,4 +56,5 @@ ns.profiles = {
         resto   = { spell = true, mana = true },
     },
 }
+ns.LEGACY_DEFAULT_PROFILE = "По умолчанию"
 ns.profilesLoaded = true

@@ -1,4 +1,4 @@
-local ADDON, ns = ...
+local _, ns = ...
 local WHITE = "Interface\\Buttons\\WHITE8X8"
 local BTN_H = 22
 local BTN_PAD = 24
@@ -8,9 +8,6 @@ function ns.OnTheme(fn)
 end
 function ns.RepaintTheme()
     for i = 1, #painters do painters[i]() end
-end
-function ns.SkinKey()
-    return ns.window and ns.window:GetSkin()
 end
 function ns.SetSkin(key)
     if not (ns.themes and ns.themes[key]) then return end
@@ -37,7 +34,89 @@ local function ownText(f)
     if f.GetText then return f:GetText() end
     return nil
 end
+ns.LAYER = {
+    panel     = { strata = "LOW", level = 1 },
+    chrome    = { strata = "LOW", level = 50 },
+    minimap   = { strata = "MEDIUM", level = 8 },
+    editbar   = { strata = "MEDIUM", level = 20 },
+    panelcard = { strata = "HIGH", level = 10 },
+    window    = { strata = "HIGH", level = 50, toplevel = true },
+    entrycard = { strata = "HIGH", level = 80 },
+    undo      = { strata = "HIGH", level = 82 },
+    menu      = { strata = "DIALOG", level = 20 },
+    drag      = { strata = "FULLSCREEN_DIALOG", level = 60 },
+}
+ns.LAYER_ORDER = { "panel", "chrome", "minimap", "editbar", "panelcard", "window", "entrycard", "undo", "menu", "drag" }
+function ns.Layer(f, kind)
+    local l = ns.LAYER[kind]
+    f:SetFrameStrata(l.strata)
+    f:SetFrameLevel(l.level)
+    f:SetToplevel(l.toplevel and true or false)
+end
+function ns.PaintEdit(f)
+    local e = ns.EDIT
+    f:SetBackdrop(e.backdrop)
+    f:SetBackdropColor(e.bg[1], e.bg[2], e.bg[3], e.bg[4])
+    f:SetBackdropBorderColor(e.border[1], e.border[2], e.border[3], e.border[4])
+end
+function ns.Ink(fs, c)
+    fs:SetTextColor(c[1], c[2], c[3])
+end
+function ns.MakeCloseX(parent, glyph)
+    local b = CreateFrame("Button", nil, parent)
+    b:SetWidth(16)
+    b:SetHeight(16)
+    b.text = b:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    b.text:SetPoint("CENTER", b, "CENTER", 0, 0)
+    b.text:SetText(glyph or "x")
+    ns.Ink(b.text, ns.EDIT.mute)
+    b:SetScript("OnEnter", function(self)
+        ns.Ink(self.text, ns.EDIT.white)
+        ns.TipShow(self)
+    end)
+    b:SetScript("OnLeave", function(self)
+        ns.Ink(self.text, ns.EDIT.mute)
+        ns.TipHide()
+    end)
+    b:SetScript("OnClick", function(self)
+        if self.onClick then self.onClick(self) end
+    end)
+    return b
+end
+function ns.MakeEditFrame(name, kind)
+    local f = CreateFrame("Frame", name, UIParent)
+    ns.Layer(f, kind)
+    f:EnableMouse(true)
+    f:SetMovable(true)
+    f:SetClampedToScreen(true)
+    f:RegisterForDrag("LeftButton")
+    f:SetScript("OnDragStart", function(self) self:StartMoving() end)
+    f:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
+    tinsert(UISpecialFrames, name)
+    ns.PaintEdit(f)
+    f.close = ns.MakeCloseX(f)
+    f.close:SetPoint("TOPRIGHT", f, "TOPRIGHT", -5, -5)
+    f.close.onClick = function() f:Hide() end
+    f:Hide()
+    return f
+end
+function ns.HelpTips()
+    if not (ns.Look and ns.Look.Get and ns.Look.ALL and ns.Look.ALL.novice) then return false end
+    return ns.Look.Get("novice") and true or false
+end
+local function shortTip(f)
+    local title = f.tipTitle
+    if type(title) ~= "string" or title == "" or title == ownText(f) then return end
+    GameTooltip:SetOwner(f, f.tipAnchor or "ANCHOR_RIGHT")
+    local c = f.tipColor or C_TITLE
+    GameTooltip:SetText(title, c[1], c[2], c[3], 1, true)
+    GameTooltip:Show()
+end
 function ns.TipShow(f)
+    if not ns.HelpTips() then
+        shortTip(f)
+        return
+    end
     local body = f.tip
     local title = f.tipTitle
     if title == nil then title = ownText(f) end
@@ -202,7 +281,6 @@ local function styleButton(b)
     b:SetBackdropBorderColor(br[1], br[2], br[3], br[4] or 1)
     b.text:SetTextColor(tc[1], tc[2], tc[3])
 end
-ns.StyleButton = styleButton
 local buttons = {}
 function ns.MakeButton(parent)
     local b = CreateFrame("Button", nil, parent)
@@ -266,7 +344,6 @@ local function paintPanel(p)
     p:SetBackdropBorderColor(e[1], e[2], e[3], e[4] or 1)
     if p.cap then p.cap:SetTextColor(ns.Edge()) end
 end
-ns.PaintPanel = paintPanel
 function ns.MakePanel(parent, caption)
     local p = CreateFrame("Frame", nil, parent)
     panels[#panels + 1] = p
@@ -300,10 +377,132 @@ local function paintWindow(f)
     if f.title then f.title:SetTextColor(ns.Edge()) end
 end
 ns.PaintWindow = paintWindow
+function ns.TextHeight(fs, room)
+    local lines = (room > 0) and math.ceil((fs:GetStringWidth() or 0) / (room * 0.9)) or 1
+    if lines < 1 then lines = 1 end
+    local _, size = fs:GetFont()
+    local h = lines * ((size or 12) + 2)
+    local own = fs:GetHeight() or 0
+    return (own > h) and own or h
+end
+local GRIP = 16
+local GRIP_MIN, GRIP_MAX, GRIP_STEP = 0.6, 1.6, 300
+ns.GRIP_SCALE = { GRIP_MIN, GRIP_MAX }
+local GRIP_UP = "Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up"
+local GRIP_HL = "Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight"
+local GRIP_SHADE, GRIP_LIT = 0.85, 0.6
+local function goldGrip(g)
+    local c = ns.EDIT.gold
+    g.shade = g:CreateTexture(nil, "BACKGROUND")
+    g.shade:SetTexture(GRIP_UP)
+    g.shade:SetPoint("TOPLEFT", g, "TOPLEFT", 1, -1)
+    g.shade:SetPoint("BOTTOMRIGHT", g, "BOTTOMRIGHT", 1, -1)
+    g.shade:SetVertexColor(0, 0, 0, GRIP_SHADE)
+    g.tex = g:CreateTexture(nil, "ARTWORK")
+    g.tex:SetTexture(GRIP_UP)
+    g.tex:SetAllPoints(g)
+    g.tex:SetVertexColor(c[1], c[2], c[3], 1)
+    g.lit = g:CreateTexture(nil, "OVERLAY")
+    g.lit:SetTexture(GRIP_UP)
+    g.lit:SetAllPoints(g)
+    g.lit:SetBlendMode("ADD")
+    g.lit:SetVertexColor(c[1], c[2], c[3], GRIP_LIT)
+    g.hl = g:CreateTexture(nil, "HIGHLIGHT")
+    g.hl:SetTexture(GRIP_HL)
+    g.hl:SetAllPoints(g)
+end
+function ns.AddScaleGrip(f, get, set, onDone)
+    f:SetScale(get())
+    local g = CreateFrame("Button", nil, f)
+    g:SetWidth(GRIP)
+    g:SetHeight(GRIP)
+    g:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -4, 4)
+    g:SetFrameLevel(f:GetFrameLevel() + 20)
+    goldGrip(g)
+    g.tip = ns.T("kit.scale_tip")
+    g:SetScript("OnEnter", function(self) ns.TipShow(self) end)
+    g:SetScript("OnLeave", function() ns.TipHide() end)
+    local function step(self)
+        if not IsMouseButtonDown("LeftButton") then
+            self:SetScript("OnUpdate", nil)
+            set(f:GetScale())
+            if onDone then onDone() end
+            return
+        end
+        local _, y = GetCursorPosition()
+        local s = self.base + (self.baseY - y) / GRIP_STEP
+        if s < GRIP_MIN then s = GRIP_MIN elseif s > GRIP_MAX then s = GRIP_MAX end
+        local l, t = f:GetLeft(), f:GetTop()
+        local k = f:GetEffectiveScale()
+        f:SetScale(s)
+        if l and t then
+            local nk = f:GetEffectiveScale()
+            f:ClearAllPoints()
+            f:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", l * k / nk, t * k / nk)
+        end
+    end
+    g:SetScript("OnMouseDown", function(self)
+        self.base = f:GetScale()
+        self.baseY = select(2, GetCursorPosition())
+        ns.TipHide()
+        self:SetScript("OnUpdate", step)
+    end)
+    return g
+end
+function ns.AddSizeGrip(f, opts)
+    local g = CreateFrame("Button", nil, f)
+    g:SetWidth(GRIP)
+    g:SetHeight(GRIP)
+    g:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -4, 4)
+    g:SetFrameLevel(f:GetFrameLevel() + 20)
+    goldGrip(g)
+    g.tipTitle = ns.T("kit.size")
+    g.tip = opts.tip or ns.T("kit.size_tip")
+    g.sizer = ns.Sizer.New(f, {
+        limits = opts.limits,
+        apply = opts.apply,
+        snap = opts.snap,
+        label = opts.label,
+        paint = function(tex, role)
+            local r, gg, b = ns.Edge()
+            tex:SetTexture(r, gg, b, role == "fill" and 0.08 or 0.9)
+        end,
+        text = function(fs) fs:SetTextColor(ns.Edge()) end,
+    })
+    g:SetScript("OnEnter", function(self) ns.TipShow(self) end)
+    g:SetScript("OnLeave", function() ns.TipHide() end)
+    g:SetScript("OnMouseDown", function(self, button)
+        if button and button ~= "LeftButton" then return end
+        ns.TipHide()
+        if opts.start then opts.start() end
+        self.sizer:Start()
+    end)
+    g:SetScript("OnMouseUp", function(self) self.sizer:Finish() end)
+    f:HookScript("OnHide", function() g.sizer:Cancel() end)
+    return g
+end
+function ns.RescaleWindow(f, s)
+    local l, t = f:GetLeft(), f:GetTop()
+    local k = f:GetEffectiveScale()
+    f:SetScale(s)
+    if not (l and t) then return end
+    local nk = f:GetEffectiveScale()
+    f:ClearAllPoints()
+    f:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", l * k / nk, t * k / nk)
+end
+function ns.PinTopLeft(f)
+    local l, t = f:GetLeft(), f:GetTop()
+    if not (l and t) then return end
+    f:ClearAllPoints()
+    f:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", l, t)
+end
+function ns.ScreenIn(f)
+    local k = UIParent:GetEffectiveScale() / f:GetEffectiveScale()
+    return (UIParent:GetWidth() or 0) * k, (UIParent:GetHeight() or 0) * k
+end
 function ns.MakeWindow(name, title)
     local f = CreateFrame("Frame", name, UIParent)
-    f:SetFrameStrata("DIALOG")
-    f:SetToplevel(true)
+    ns.Layer(f, "window")
     f:EnableMouse(true)
     f:SetMovable(true)
     f:SetClampedToScreen(true)
@@ -318,6 +517,33 @@ function ns.MakeWindow(name, title)
     paintWindow(f)
     f:Hide()
     return f
+end
+ns.BAR_SCALE = { min = 0.5, max = 2.5, step = 0.1 }
+function ns.NoteHeight(fs)
+    return ns.TextHeight(fs, fs:GetWidth() or 0)
+end
+local function stepperSet(s, text, canLess, canMore)
+    s.value:SetText(text)
+    if canLess then s.less:Enable() else s.less:Disable() end
+    if canMore then s.more:Enable() else s.more:Disable() end
+end
+function ns.MakeStepper(parent, x, stepW, valueW, onStep)
+    local s = { Set = stepperSet }
+    s.less = ns.MakeButton(parent)
+    s.less:SetLabel("-")
+    s.less:SetWidth(stepW)
+    s.less:SetPoint("LEFT", parent, "LEFT", x, 0)
+    s.less.onClick = function() onStep(-1) end
+    s.value = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    s.value:SetPoint("LEFT", s.less, "RIGHT", 4, 0)
+    s.value:SetWidth(valueW)
+    s.value:SetJustifyH("CENTER")
+    s.more = ns.MakeButton(parent)
+    s.more:SetLabel("+")
+    s.more:SetWidth(stepW)
+    s.more:SetPoint("LEFT", s.value, "RIGHT", 4, 0)
+    s.more.onClick = function() onStep(1) end
+    return s
 end
 ns.OnTheme(function()
     for i = 1, #buttons do

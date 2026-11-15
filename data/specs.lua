@@ -1,4 +1,4 @@
-local ADDON, ns = ...
+local _, ns = ...
 ns.specs = ns.specs or {}
 ns.specs.WARRIOR = {
     ru = "Воин", en = "Warrior",
@@ -30,10 +30,11 @@ ns.specs.HUNTER = {
 }
 ns.specs.ROGUE = {
     ru = "Разбойник", en = "Rogue",
-    order = { "assassination", "combat" },
+    order = { "assassination", "combat", "subtlety" },
     variants = {
-        assassination = { ru = "Убийство", en = "Assassination", tab = 1, role = "dd", base = "assassination", nature = "phys", default = true },
-        combat        = { ru = "Бой",      en = "Combat",        tab = 2, role = "dd", base = "combat", nature = "phys",        default = true },
+        assassination = { ru = "Убийство",   en = "Assassination", tab = 1, role = "dd", base = "assassination", nature = "phys", default = true },
+        combat        = { ru = "Бой",        en = "Combat",        tab = 2, role = "dd", base = "combat", nature = "phys",        default = true },
+        subtlety      = { ru = "Скрытность", en = "Subtlety",      tab = 3, role = "dd", base = "subtlety", nature = "phys",      default = true },
     },
 }
 ns.specs.PRIEST = {
@@ -110,49 +111,6 @@ function ns.SpecInfo(class, variant)
     local c = ns.specs[class]
     return c and c.variants[variant] or nil
 end
-function ns.SpecInfoLoose(class, variant)
-    local c = ns.specs[class]
-    if not c then return nil end
-    local v = c.variants[variant]
-    if v then return v end
-    if type(variant) ~= "string" then return nil end
-    for _, key in ipairs(c.order) do
-        local info = c.variants[key]
-        local base = info.base
-        if base and (variant == base or variant:find("^" .. base .. "_")) then
-            return info
-        end
-    end
-    return nil
-end
-ns.armorProf = {
-    PRIEST      = { armor = 1 },
-    MAGE        = { armor = 1 },
-    WARLOCK     = { armor = 1 },
-    ROGUE       = { armor = 2 },
-    DRUID       = { armor = 2, relic = 8 },
-    HUNTER      = { armor = 3 },
-    SHAMAN      = { armor = 3, shield = true, relic = 9 },
-    WARRIOR     = { armor = 4, shield = true },
-    PALADIN     = { armor = 4, shield = true, relic = 7 },
-    DEATHKNIGHT = { armor = 4, relic = 10 },
-}
-function ns.CanWear(class, meta)
-    if type(meta) ~= "table" or meta.c ~= 4 then return false end
-    local p = ns.armorProf[class]
-    if not p then return false end
-    local s = meta.s
-    if s == 0 then return true end
-    if meta.i == 16 then return true end
-    if s == p.armor then return true end
-    if s == 6 then return p.shield or false end
-    if s == p.relic then return true end
-    return false
-end
-ns.CLASS_ORDER = {
-    "PRIEST", "WARRIOR", "PALADIN", "DEATHKNIGHT", "DRUID",
-    "SHAMAN", "MAGE", "WARLOCK", "ROGUE", "HUNTER",
-}
 local NAME_FIELD = { ruRU = "ru", enUS = "en", esES = "es", ptBR = "pt" }
 function ns.LocalName(info)
     if not info then return nil end
@@ -165,31 +123,4 @@ setmetatable(ns.CLASS_NAME, { __index = function(_, token)
 end })
 function ns.ClassName(class)
     return ns.LocalName(ns.specs[class]) or class
-end
-local I = "Interface\\Icons\\"
-ns.SPEC_ICON = {
-    PRIEST = { disc = I .. "Spell_Holy_PowerWordShield", holy = I .. "Spell_Holy_GuardianSpirit",
-               shadow = I .. "Spell_Shadow_ShadowWordPain" },
-    WARRIOR = { arms = I .. "Ability_Warrior_SavageBlow", fury = I .. "Ability_Warrior_InnerRage",
-                prot = I .. "Ability_Warrior_DefensiveStance" },
-    PALADIN = { holy = I .. "Spell_Holy_HolyBolt", prot_tank = I .. "Spell_Holy_DevotionAura",
-                prot_dps = I .. "Spell_Holy_DevotionAura", ret_agi = I .. "Spell_Holy_AuraOfLight" },
-    HUNTER = { bm = I .. "Ability_Hunter_BeastTaming", mm = I .. "Ability_Hunter_FocusedAim",
-               surv = I .. "Ability_Hunter_ExplosiveShot" },
-    ROGUE = { assassination = I .. "Ability_Rogue_Eviscerate", combat = I .. "Ability_BackStab" },
-    DEATHKNIGHT = { blood_tank = I .. "Spell_Deathknight_BloodPresence", blood_str = I .. "Spell_Deathknight_BloodPresence",
-                    blood_agi = I .. "Spell_Deathknight_BloodPresence", frost = I .. "Spell_Deathknight_FrostPresence",
-                    unholy = I .. "Spell_Deathknight_UnholyPresence" },
-    SHAMAN = { ele = I .. "Spell_Nature_Lightning", enh_phys = I .. "Spell_Nature_LightningShield",
-               enh_spell = I .. "Spell_Nature_LightningShield", resto = I .. "Spell_Nature_MagicImmunity" },
-    MAGE = { arcane = I .. "Spell_Holy_MagicalSentry", fire = I .. "Spell_Fire_FlameBolt",
-             frost = I .. "Spell_Frost_FrostBolt02" },
-    WARLOCK = { affli = I .. "Spell_Shadow_DeathCoil", demo = I .. "Spell_Shadow_Metamorphosis",
-                destro = I .. "Spell_Shadow_RainOfFire" },
-    DRUID = { balance = I .. "Spell_Nature_StarFall", cat = I .. "Ability_Druid_CatForm",
-              bear = I .. "Ability_Racial_BearForm", resto = I .. "Spell_Nature_HealingTouch" },
-}
-function ns.SpecIcon(class, variant)
-    local c = ns.SPEC_ICON[class]
-    return c and c[variant] or nil
 end

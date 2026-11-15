@@ -1,0 +1,20 @@
+local _, ns = ...
+ns.widgetData = ns.widgetData or {}
+ns.widgetData.mage_frost_shatter = {
+    deep       = 44572,
+    fingers    = 44544,
+    fingersMax = 2,
+    brain      = 57761,
+    talent     = 44546,
+    ffb        = 47610,
+    fireball   = 42833,
+    deepCd     = 30,
+    gcd        = 1.5,
+    soon       = 3,
+    tick       = 0.5,
+    dim        = 0.4,
+    offDim     = 0.3,
+    ring       = { 0.55, 0.8, 1, 0.95 },
+    ringOff    = { 0, 0, 0, 0.35 },
+}
+ns.mageFrostShatterDataLoaded = true

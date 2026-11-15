@@ -1,18 +1,10 @@
-local ADDON, ns = ...
+local _, ns = ...
 function ns.HasBuff(name)
     if not name then return false end
     for i = 1, 40 do
         local n = UnitBuff("player", i)
         if not n then break end
         if n == name then return true end
-    end
-    return false
-end
-local function unitHasAny(unit, names)
-    for i = 1, 40 do
-        local n = UnitBuff(unit, i)
-        if not n then break end
-        if names[n] then return true end
     end
     return false
 end
@@ -36,38 +28,32 @@ function ns.ActiveBuffName(e)
     end
     return nil
 end
-local function scanAura(unit, e, fn)
+function ns.UnitHasBuff(unit, e)
     if not unit or not UnitExists(unit) then return false end
     local set = ns.BuffNameSet(e)
     for i = 1, 40 do
-        local n = fn(unit, i)
+        local n = UnitBuff(unit, i)
         if not n then break end
         if set[n] then return true end
     end
     return false
 end
-function ns.UnitHasBuff(unit, e)
-    return scanAura(unit, e, UnitBuff)
-end
-function ns.UnitHasDebuff(unit, e)
-    return scanAura(unit, e, UnitDebuff)
-end
 function ns.BuffLeft(name)
     if not name then return nil end
     for i = 1, 40 do
-        local n, _, _, _, _, duration, expires = UnitBuff("player", i)
+        local n, _, _, count, _, duration, expires = UnitBuff("player", i)
         if not n then break end
         if n == name then
-            if not expires or expires == 0 then return 0 end
-            return expires - GetTime(), duration, expires - (duration or 0)
+            if not expires or expires == 0 then return 0, nil, nil, count end
+            return expires - GetTime(), duration, expires - (duration or 0), count
         end
     end
     return nil
 end
-local SCAN_EVERY = 1.0
 local groupBuffs = {}
-local groupTotal = 0
-local scanAt     = -1
+function ns.GroupBuffReset()
+    for _, g in pairs(groupBuffs) do g.ver = -1 end
+end
 function ns.GroupUnits()
     local out = {}
     local nr = (GetNumRaidMembers and GetNumRaidMembers()) or 0
@@ -81,51 +67,56 @@ function ns.GroupUnits()
     for i = 1, np do out[i + 1] = "party" .. i end
     return out, false
 end
-local function groupScan()
-    local units = ns.GroupUnits()
-    groupTotal = #units
-    for _, g in pairs(groupBuffs) do
-        g.n, g.min, g.seen = 0, nil, nil
-        g.mine, g.minMine, g.seenMine = 0, nil, nil
-    end
-    if groupTotal == 0 then return end
-    local now = GetTime()
-    for _, unit in ipairs(units) do
-        for a = 1, 40 do
-            local n, _, _, _, _, _, expires, caster = UnitBuff(unit, a)
-            if not n then break end
-            for _, g in pairs(groupBuffs) do
-                if g.names[n] then
-                    if g.seen ~= unit then g.seen = unit; g.n = g.n + 1 end
-                    local left = (expires and expires > 0) and (expires - now) or nil
-                    if left and (not g.min or left < g.min) then g.min = left end
-                    if caster == "player" then
-                        if g.seenMine ~= unit then g.seenMine = unit; g.mine = g.mine + 1 end
-                        if left and (not g.minMine or left < g.minMine) then g.minMine = left end
-                    end
-                end
-            end
+local function groupCount(g)
+    local R = ns.Raid
+    g.ver = R.Version()
+    g.n, g.minEnd, g.charges = 0, nil, nil
+    local roster = R.Roster()
+    g.total = R.Grouped() and #roster or 0
+    if g.total == 0 then return end
+    local b = ns.BlessingOf and ns.BlessingOf(g.id)
+    local skip = b and ns.IsLearned(b.great) and ns.BlessSkip(b.key) or nil
+    for _, m in ipairs(roster) do
+        local e, c
+        if skip and skip[m.class] then
+            g.total = g.total - 1
+        elseif g.single then
+            e, c = R.Own(m, g.names)
+        else
+            e = R.End(m, g.names)
+        end
+        if e then
+            g.n = g.n + 1
+            if e > 0 and (not g.minEnd or e < g.minEnd) then g.minEnd = e end
+            if c and c > 0 then g.charges = c end
         end
     end
 end
 function ns.GroupBuffNumbers(e)
     local id = (type(e) == "table") and e.id or e
     if not id or not GetSpellInfo(id) then return 0, 0, nil end
-    local now = GetTime()
-    local g = groupBuffs[id]
+    local R = ns.Raid
+    if not R then return 0, 0, nil end
+    local single = (type(e) == "table" and e.single) and true or false
+    local key = (single and "s" or "g") .. id
+    local g = groupBuffs[key]
     if not g then
-        g = { names = ns.BuffNameSet(e), n = 0, mine = 0 }
-        groupBuffs[id] = g
-        scanAt = -1
+        local names = {}
+        local set = ns.BuffNameSet(e)
+        local b = ns.BlessingOf and ns.BlessingOf(id)
+        local plain = b and GetSpellInfo(b.plain)
+        if plain then set[plain] = true end
+        for n in pairs(set) do names[#names + 1] = n end
+        table.sort(names)
+        g = { names = names, single = single, ver = -1, n = 0, total = 0, id = id }
+        groupBuffs[key] = g
+        R.Watch("entry:" .. key, names, single)
     end
-    if now - scanAt >= SCAN_EVERY then
-        scanAt = now
-        groupScan()
-    end
-    if type(e) == "table" and e.single then
-        return g.mine or 0, (groupTotal > 0) and 1 or 0, g.minMine
-    end
-    return g.n or 0, groupTotal, g.min
+    R.Touch()
+    if g.ver ~= R.Version() then groupCount(g) end
+    local min = g.minEnd and math.max(0, g.minEnd - GetTime()) or nil
+    if single then return g.n, (g.total > 0) and 1 or 0, min, g.charges end
+    return g.n, g.total, min
 end
 local learned
 local learnedOk
@@ -141,8 +132,9 @@ local function rebuildLearned()
         end
     end
     learned, learnedOk = set, n > 0
-    talRank = {}
-    if GetNumTalentTabs and GetTalentInfo and GetNumTalents then
+    talRank = nil
+    if GetNumTalentTabs and GetTalentInfo and GetNumTalents and ns.TalentsKnown() then
+        talRank = {}
         local group = GetActiveTalentGroup and GetActiveTalentGroup() or 1
         for tab = 1, GetNumTalentTabs() do
             for i = 1, GetNumTalents(tab) do
@@ -162,35 +154,53 @@ function ns.IsLearned(id)
     if not learnedOk then return true end
     return learned[name] == true
 end
+function ns.IsTalent(id)
+    local name = id and GetSpellInfo(id)
+    if not name then return false end
+    if not learned then rebuildLearned() end
+    return (talRank and talRank[name] ~= nil) and true or false
+end
 local function onlyLearned(entries)
     local out = {}
     for _, e in ipairs(entries or {}) do
-        if e.needs == true or ns.IsLearned(e.needs or e.id) then out[#out + 1] = e end
+        if e.needs == true or ns.IsLearned(e.needs or e.id) then
+            out[#out + 1] = e
+        elseif e.id then
+            ns.Avail.Drop(ns.EntryKey("spell", e))
+        end
     end
     return out
 end
 ns.OnlyLearned = onlyLearned
-local function forgetSpec()
-    learned = nil
-    if ns.Incoming and ns.Incoming.Forget then ns.Incoming.Forget() end
-    if ns.buffbar and ns.buffbar.Update then ns.buffbar:Update() end
-end
 local book = CreateFrame("Frame")
-book:RegisterEvent("SPELLS_CHANGED")
-book:RegisterEvent("LEARNED_SPELL_IN_TAB")
-book:RegisterEvent("PLAYER_TALENT_UPDATE")
-book:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED")
-book:SetScript("OnEvent", forgetSpec)
 local TALENT_TICK = 1.0
 local talentAcc = 0
-book:SetScript("OnUpdate", function(self, elapsed)
+local poll
+local function forgetSpec()
+    learned = nil
+    ns.Avail.Reset()
+    if ns.Incoming and ns.Incoming.Forget then ns.Incoming.Forget() end
+    if ns.Profile and ns.Profile.SyncSpec then ns.Profile.SyncSpec() end
+    if ns.Preset and ns.Preset.Sync then ns.Preset.Sync() end
+    if ns.buffbar and ns.buffbar.Update then ns.buffbar:Update() end
+    if not ns.TalentsKnown() then book:SetScript("OnUpdate", poll) end
+    if ns.Options and ns.Options.Refresh then ns.Options.Refresh() end
+end
+function poll(self, elapsed)
     talentAcc = talentAcc + elapsed
     if talentAcc < TALENT_TICK then return end
     talentAcc = 0
     if not ns.TalentsKnown() then return end
     self:SetScript("OnUpdate", nil)
     forgetSpec()
-end)
+end
+book:RegisterEvent("SPELLS_CHANGED")
+book:RegisterEvent("LEARNED_SPELL_IN_TAB")
+book:RegisterEvent("PLAYER_TALENT_UPDATE")
+book:RegisterEvent("ACTIVE_TALENT_GROUP_CHANGED")
+book:SetScript("OnEvent", function() forgetSpec() end)
+ns.ForgetSpec = forgetSpec
+book:SetScript("OnUpdate", poll)
 function ns.BuffEntries(list)
     local e = {}
     for _, v in ipairs(list or {}) do
@@ -213,37 +223,11 @@ function ns.FoodAuraEntries(list)
     end
     return {}
 end
-function ns.BuffIds(list)
-    local ids = {}
-    for _, v in ipairs(list or {}) do
-        ids[#ids + 1] = (type(v) == "table") and v.id or v
-    end
-    return ids
-end
-function ns.CountGroupBuffed(buffs)
-    local units, inRaid = ns.GroupUnits()
-    local total = #units
-    if total == 0 then return 0, nil, inRaid end
-    local names = {}
-    for _, e in ipairs(ns.BuffEntries(buffs)) do
-        for nm in pairs(ns.BuffNameSet(e)) do names[nm] = true end
-    end
-    if not next(names) then return 0, total, inRaid end
-    local n = 0
-    for _, unit in ipairs(units) do
-        if unitHasAny(unit, names) then n = n + 1 end
-    end
-    return n, total, inRaid
-end
-function ns.PlayerTrackedBuffs()
-    local _, class = UnitClass("player")
-    local v = ns.CurrentVariant()
-    local s = ns.SpecData(ns.rotation, class, v)
-    return s and s.buffs and ns.BuffIds(s.buffs) or nil
-end
 function ns.EntryKey(kind, e)
     if e.slot then return "slot:" .. e.slot end
+    if e.hand then return "weapon:" .. e.hand end
     if kind == "item" then return "item:" .. (e.item or 0) end
+    if e.byName and not e.id then return "name:" .. e.byName end
     return "spell:" .. (e.id or 0)
 end
 function ns.BarProfile()
@@ -252,73 +236,25 @@ function ns.BarProfile()
 end
 function ns.PlayerRole()
     local _, class = UnitClass("player")
-    local info = ns.SpecInfo and ns.SpecInfo(class, ns.CurrentVariant and ns.CurrentVariant())
-    return (info and info.role) or "dd"
+    return ns.RoleOf(class, ns.CurrentVariant and ns.CurrentVariant())
 end
 ns.ROLE_PRESET = {
     dd   = { dot = true  },
     heal = { dot = false },
     tank = { dot = false },
 }
-function ns.BarPicked(cat, key, entry)
-    local pick = LazyBuffBarDB and LazyBuffBarDB.pick
-    local p = pick and pick[ns.BarProfile()]
-    local v = p and p[key]
-    if v ~= nil then return v end
+function ns.BarPicked(cat, entry, role)
     if entry and entry.off then return false end
-    local preset = ns.ROLE_PRESET[ns.PlayerRole()]
+    local preset = ns.ROLE_PRESET[role or ns.PlayerRole()]
     local d = preset and preset[cat]
     if d ~= nil then return d end
     return true
 end
-function ns.SetBarPicked(key, on)
-    LazyBuffBarDB = LazyBuffBarDB or {}
-    LazyBuffBarDB.pick = LazyBuffBarDB.pick or {}
-    local prof = ns.BarProfile()
-    LazyBuffBarDB.pick[prof] = LazyBuffBarDB.pick[prof] or {}
-    LazyBuffBarDB.pick[prof][key] = on and true or false
-    if ns.buffbar and ns.buffbar.Update then ns.buffbar:Update() end
-end
-function ns.ResetBarPicks()
-    if LazyBuffBarDB and LazyBuffBarDB.pick then
-        LazyBuffBarDB.pick[ns.BarProfile()] = nil
-    end
-    if LazyBuffBarDB and LazyBuffBarDB.order then
-        LazyBuffBarDB.order[ns.BarProfile()] = nil
-    end
-    if ns.buffbar and ns.buffbar.Update then ns.buffbar:Update() end
-end
-local function savedOrder(cat)
-    local o = LazyBuffBarDB and LazyBuffBarDB.order
-    local p = o and o[ns.BarProfile()]
-    return p and p[cat] or nil
-end
-function ns.SetBarOrder(cat, keys)
-    LazyBuffBarDB = LazyBuffBarDB or {}
-    LazyBuffBarDB.order = LazyBuffBarDB.order or {}
-    local p = ns.BarProfile()
-    LazyBuffBarDB.order[p] = LazyBuffBarDB.order[p] or {}
-    LazyBuffBarDB.order[p][cat] = keys
-end
-local function applyOrder(cat, out)
-    local list = savedOrder(cat)
-    if not list or #out < 2 then return out end
-    local rank, base = {}, {}
-    for i, k in ipairs(list) do rank[k] = i end
-    for i, e in ipairs(out) do base[e] = i end
-    table.sort(out, function(a, b)
-        local ra, rb = rank[a._key], rank[b._key]
-        if ra and rb then return ra < rb end
-        if ra ~= rb then return ra ~= nil end
-        return base[a] < base[b]
-    end)
-    return out
-end
-function ns.PickEntries(cat, kind, entries, all)
+function ns.PickEntries(cat, kind, entries, all, role)
     local out = {}
     for _, e in ipairs(entries or {}) do
         local key = ns.EntryKey(kind, e)
-        local on = ns.BarPicked(cat, key, e)
+        local on = ns.BarPicked(cat, e, role)
         if on or all then
             local c = {}
             for k, v in pairs(e) do c[k] = v end
@@ -326,28 +262,30 @@ function ns.PickEntries(cat, kind, entries, all)
             out[#out + 1] = c
         end
     end
-    return applyOrder(cat, out)
+    return out
 end
-function ns.BarSections(all)
+function ns.RoleOf(class, v)
+    local info = ns.SpecInfo and ns.SpecInfo(class, v)
+    return (info and info.role) or "dd"
+end
+function ns.BarSections(all, v)
     local _, class = UnitClass("player")
-    local v = ns.CurrentVariant()
+    v = v or ns.CurrentVariant()
     local s = ns.SpecData(ns.rotation, class, v)
     if not s then return {} end
-    local hide = (LazyBuffBarDB and LazyBuffBarDB.hide) or {}
     local out = {}
-    local function section(key, kind, entries, hideKey)
-        entries = ns.PickEntries(key, kind, entries, all)
-        if #entries > 0 and (all or not hide[hideKey or key]) then
+    local role = ns.RoleOf(class, v)
+    local function section(key, kind, entries)
+        entries = ns.PickEntries(key, kind, entries, all, role)
+        if #entries > 0 then
             out[#out + 1] = { key = key, kind = kind, entries = entries }
         end
     end
-    local function idsToEntries(ids)
-        return ns.BuffEntries(ids)
-    end
-    if s.buffs then
-        local own = onlyLearned(idsToEntries(s.buffs))
+    if s.buffs or s.weapon then
+        local own = onlyLearned(ns.BuffEntries(s.buffs))
         local aura = ns.PaladinAuraEntry and ns.PaladinAuraEntry()
         if aura then tinsert(own, 1, aura) end
+        for _, e in ipairs(ns.WeaponEntries(s.weapon)) do own[#own + 1] = e end
         section("personal", "spell", own)
     end
     if s.flask then
@@ -355,34 +293,31 @@ function ns.BarSections(all)
         if ns.IsAlchemist and ns.IsAlchemist() then
             fl[#fl + 1] = { item = 47499, aura = 67019 }
         end
-        section("flask", "item", fl, "personal")
+        section("flask", "item", fl)
     end
-    if s.food      then section("food",     "spell", ns.FoodAuraEntries(s.food), "personal") end
-    if s.raidBuffs then section("raid",     "spell", onlyLearned(idsToEntries(s.raidBuffs))) end
-    if s.potions   then section("potion",   "item",  ns.ItemEntries(s.potions)) end
+    if s.food      then section("food",     "spell", ns.FoodAuraEntries(s.food)) end
+    if s.raidBuffs then section("raid",     "spell", onlyLearned(ns.BuffEntries(s.raidBuffs))) end
+    if s.potions then
+        local pots = {}
+        for _, e in ipairs(ns.ItemEntries(s.potions)) do
+            if not e.needs or ns.IsLearned(e.needs) then
+                e.buff = e.buff or (ns.potionBuffs and ns.potionBuffs[e.item]) or nil
+                pots[#pots + 1] = e
+            else
+                ns.Avail.Drop(ns.EntryKey("item", e))
+            end
+        end
+        section("potion", "item", pots)
+    end
     return out
 end
 function ns.IsAlchemist()
     if GetItemCount and GetItemCount(47499) > 0 then return true end
+    local alchemy = GetSpellInfo(2259)
     for i = 1, (GetNumSkillLines and GetNumSkillLines() or 0) do
         local name = GetSkillLineInfo(i)
-        if name == "Алхимия" then return true end
+        if alchemy and name == alchemy then return true end
     end
     return false
-end
-ns.BAR_CATEGORIES = {
-    { key = "personal", label = "личные" },
-    { key = "raid",     label = "рейд" },
-    { key = "potion",   label = "препоты" },
-}
-function ns.BarCategoryShown(key)
-    local hide = LazyBuffBarDB and LazyBuffBarDB.hide
-    return not (hide and hide[key])
-end
-function ns.SetBarCategoryShown(key, shown)
-    LazyBuffBarDB = LazyBuffBarDB or {}
-    LazyBuffBarDB.hide = LazyBuffBarDB.hide or {}
-    LazyBuffBarDB.hide[key] = (not shown) and true or nil
-    if ns.buffbar and ns.buffbar.Update then ns.buffbar:Update() end
 end
 ns.buffsLoaded = true

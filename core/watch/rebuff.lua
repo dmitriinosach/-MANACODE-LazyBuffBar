@@ -1,4 +1,4 @@
-local ADDON, ns = ...
+local _, ns = ...
 local ID = "rebuff"
 local EVERY = 3
 local BUFF_EVERY = 5
@@ -48,10 +48,6 @@ local function myBuffs()
     if #cached == 0 then return nil end
     return cached
 end
-local function nearBoss()
-    local w = ns.WhereAmI()
-    return (w and w.kind == "boss") and true or false
-end
 local function tellLeft(e, mins, boss)
     local buff = GetSpellInfo(e.id)
     if not buff then return end
@@ -83,7 +79,7 @@ local function checkBuffs()
             if left then
                 if left < LOW_MIN * 60 then
                     tellLeft(e, LOW_MIN, false)
-                elseif left < BOSS_MIN * 60 and nearBoss() then
+                elseif left < BOSS_MIN * 60 and ns.NearBoss() then
                     tellLeft(e, BOSS_MIN, true)
                 end
             elseif n == 0 and raid then

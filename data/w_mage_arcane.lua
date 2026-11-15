@@ -1,0 +1,20 @@
+local _, ns = ...
+ns.widgetData = ns.widgetData or {}
+ns.widgetData.mage_arcane = {
+    blast    = 42897,
+    alt      = { 30451, 42894, 42896 },
+    stack    = 36032,
+    max      = 4,
+    window   = 6,
+    proc     = 44401,
+    missiles = 42846,
+    at       = 4,
+    soon     = 2,
+    tick     = 0.5,
+    dim      = 0.4,
+    left     = { 0.62, 0.42, 1, 0.9 },
+    gone     = { 0, 0, 0, 0.75 },
+    seg      = { 0.78, 0.66, 1, 1 },
+    star     = "Interface\\TargetingFrame\\UI-RaidTargetingIcon_1",
+}
+ns.mageArcaneDataLoaded = true

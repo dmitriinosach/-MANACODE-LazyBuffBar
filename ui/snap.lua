@@ -43,7 +43,7 @@ local function line(n)
     if not guides then
         guides = CreateFrame("Frame", nil, UIParent)
         guides:SetAllPoints(UIParent)
-        guides:SetFrameStrata("TOOLTIP")
+        ns.Layer(guides, "drag")
     end
     local tx = lines[n]
     if not tx then
@@ -54,7 +54,7 @@ local function line(n)
     return tx
 end
 local function hideGuides()
-    for _, tx in ipairs(lines) do tx:Hide() end
+    for _, tx in pairs(lines) do tx:Hide() end
 end
 local function showGuide(n, vertical, hit, lo, hi)
     local tx = line(n)
@@ -98,19 +98,23 @@ local function step()
         if hx then showGuide(1, true, hx, b, t) end
         if hy then showGuide(2, false, hy, l, r) end
     end
+    if drag.fit then
+        l, t = drag.fit(l, t, r, b)
+        r, b = l + drag.w, t - drag.h
+    end
     local k = u / f:GetEffectiveScale()
     f:ClearAllPoints()
     f:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", l * k, t * k)
 end
 driver:SetScript("OnUpdate", function()
     if not drag then driver:Hide(); return end
-    if not IsMouseButtonDown("LeftButton") then
+    if InCombatLockdown() or not IsMouseButtonDown("LeftButton") then
         ns.Snap.Finish(drag.frame)
         return
     end
     step()
 end)
-function ns.Snap.Begin(f, others, onDrop)
+function ns.Snap.Begin(f, others, onDrop, fit)
     if InCombatLockdown() then
         if ns.say then ns.say(ns.T("bar.combat")) end
         return false
@@ -121,13 +125,13 @@ function ns.Snap.Begin(f, others, onDrop)
     local u = uiScale()
     local xs, ys = targets(f, others)
     drag = { frame = f, ox = cx / u - l, oy = cy / u - t, w = r - l, h = t - b,
-             xs = xs, ys = ys, onDrop = onDrop }
+             xs = xs, ys = ys, onDrop = onDrop, fit = fit }
     driver:Show()
     return true
 end
 function ns.Snap.Finish(f)
     if not drag or drag.frame ~= f then return false end
-    step()
+    if not InCombatLockdown() then step() end
     local onDrop = drag.onDrop
     drag = nil
     driver:Hide()
@@ -137,5 +141,8 @@ function ns.Snap.Finish(f)
 end
 function ns.Snap.Held()
     return drag and drag.frame or nil
+end
+function ns.Snap.Rect(f)
+    return rect(f)
 end
 ns.snapLoaded = true

@@ -1,5 +1,6 @@
-local ADDON, ns = ...
+local _, ns = ...
 ns.Incoming = ns.Incoming or {}
+local FAKE_SIZE = 25
 local names = {}
 local function spellName(id)
     if names[id] == nil then
@@ -7,17 +8,18 @@ local function spellName(id)
     end
     return names[id] or nil
 end
-local function entryOf(buff)
+local function entryOf(buff, key)
     local alt
     for i = 2, #buff.auras do
         alt = alt or {}
         alt[#alt + 1] = buff.auras[i]
     end
     return { id = buff.auras[1], alt = alt, noAction = true,
-             soft = buff.maybe and true or nil, want = buff }
+             soft = buff.maybe and true or nil, want = buff, wkey = key }
 end
-local function scope()
-    return ns.BarProfile()
+local function scope(variant)
+    if not variant then return ns.BarProfile() end
+    return ns.PlayerClass() .. "/" .. variant
 end
 local derived = {}
 local told = {}
@@ -52,13 +54,13 @@ local function harvest(list, out)
         end
     end
 end
-local function ownNames()
+local function ownNames(variant)
     local out = {}
     local _, class = UnitClass("player")
-    local s = ns.SpecData(ns.rotation, class, ns.CurrentVariant())
+    local s = ns.SpecData(ns.rotation, class, variant or ns.CurrentVariant())
     if not s then return out end
-    harvest(s.buffs, out)
-    harvest(s.raidBuffs, out)
+    harvest(ns.OnlyLearned(ns.BuffEntries(s.buffs)), out)
+    harvest(ns.OnlyLearned(ns.BuffEntries(s.raidBuffs)), out)
     return out
 end
 local function handsOut(buff, mine)
@@ -94,23 +96,23 @@ local function givers(buff)
     if buff.mutual then return ns.Group.OthersAny(buff.from) end
     return ns.Group.ForeignAny(buff.from)
 end
-local function profile()
+local function profile(variant)
     local byClass = ns.profiles[ns.PlayerClass()]
-    return byClass and byClass[ns.CurrentVariant() or ""] or nil
+    return byClass and byClass[variant or ns.CurrentVariant() or ""] or nil
 end
-function ns.Incoming.Keys()
-    local at = scope()
+function ns.Incoming.Keys(variant)
+    local at = scope(variant)
     if derived[at] then return derived[at] end
-    local p = profile()
+    local p = profile(variant)
     if not p then return nil end
-    local role = ns.PlayerRole()
-    local mine = ownNames()
+    local role = variant and ns.RoleOf(ns.PlayerClass(), variant) or ns.PlayerRole()
+    local mine = ownNames(variant)
     local list = {}
     for _, key in ipairs(ns.incomingOrder) do
         local buff = ns.incoming[key]
         if not buff then
             gap(key)
-        elseif verdict(buff, p, role, key, mine) == "ok" then
+        elseif not buff.passive and verdict(buff, p, role, key, mine) == "ok" then
             list[#list + 1] = key
         end
     end
@@ -119,6 +121,35 @@ function ns.Incoming.Keys()
 end
 function ns.Incoming.Forget()
     for k in pairs(derived) do derived[k] = nil end
+end
+function ns.Incoming.Panel(variant)
+    local out = {}
+    local healer = (variant and ns.RoleOf(ns.PlayerClass(), variant) or ns.PlayerRole()) == "heal"
+    for _, key in ipairs(ns.Incoming.Keys(variant) or {}) do
+        local buff = ns.incoming[key]
+        if buff and not buff.maybe and (not buff.extra or (buff.heal and healer)) then out[#out + 1] = key end
+    end
+    return out
+end
+function ns.Incoming.KeyOf(ref)
+    if ns.incoming[ref] then return ref end
+    local id = tonumber(tostring(ref):match("^spell:(%d+)$"))
+    if not id then return nil end
+    for _, key in ipairs(ns.incomingOrder) do
+        local buff = ns.incoming[key]
+        if buff and buff.auras[1] == id then return key end
+    end
+    return nil
+end
+function ns.Incoming.Entry(ref)
+    local key = ns.Incoming.KeyOf(ref)
+    local buff = key and ns.incoming[key]
+    if not buff then return nil, false end
+    local e = entryOf(buff, key)
+    e._key, e._cat, e._on = ns.EntryKey("spell", e), "want", true
+    local live = (buff.mutual and ns.Group.OthersAny(buff.from) or ns.Group.ForeignAny(buff.from)) > 0
+    if not live then e.soft = true end
+    return e, live
 end
 local rows = {}
 function ns.Incoming.List()
@@ -139,11 +170,9 @@ function ns.Incoming.List()
     return rows
 end
 function ns.IncomingSections(all)
-    local hide = (LazyBuffBarDB and LazyBuffBarDB.hide) or {}
-    if not all and hide.want then return {} end
     local entries = {}
     for _, row in ipairs(ns.Incoming.List()) do
-        entries[#entries + 1] = entryOf(row.buff)
+        entries[#entries + 1] = entryOf(row.buff, row.key)
     end
     entries = ns.PickEntries("want", "spell", entries, all)
     if #entries == 0 then return {} end
@@ -161,74 +190,11 @@ function ns.Incoming.Givers(buff)
     end
     return parts or ""
 end
-function ns.Incoming.RosterLine()
-    local own = ns.PlayerClass()
-    local out
-    for class, n in pairs(ns.Group.Roster()) do
-        local label = ns.ClassName(class) or class
-        if class == own then label = label .. " " .. ns.T("want.why.you") end
-        if n > 1 then label = label .. " " .. n end
-        out = out and (out .. ", " .. label) or label
-    end
-    return out or "?"
+function ns.Incoming.SetFake(on)
+    ns.Group.SetFake(on and ns.Group.MakeFake(FAKE_SIZE, true) or nil)
 end
-local function seen(buff)
-    for _, id in ipairs(buff.auras) do
-        local name = spellName(id)
-        if name and ns.HasBuff(name) then return true end
-    end
-    return false
-end
-function ns.Incoming.Explain()
-    local out = {}
-    local class = ns.PlayerClass()
-    out[#out + 1] = ns.T("want.why.head", ns.ClassName(class) or class,
-                         tostring(ns.CurrentVariant() or "?"), ns.PlayerRole())
-    out[#out + 1] = ns.T("want.why.group", ns.Incoming.RosterLine())
-    if ns.Group.Fake() then out[#out + 1] = ns.T("want.fake.why") end
-    local p = profile()
-    if not p then
-        out[#out + 1] = ns.T("want.why.nospec")
-        return out
-    end
-    local role = ns.PlayerRole()
-    local mine = ownNames()
-    for _, key in ipairs(ns.incomingOrder) do
-        local buff = ns.incoming[key]
-        if buff then
-            local name = spellName(buff.auras[1]) or key
-            local code = verdict(buff, p, role, key, mine)
-            if code ~= "ok" then
-                out[#out + 1] = ns.T("want.why." .. code, name)
-            elseif givers(buff) < 1 then
-                out[#out + 1] = ns.T("want.why.nobody", name)
-            elseif seen(buff) then
-                out[#out + 1] = ns.T("want.why.have", name)
-            else
-                out[#out + 1] = ns.T("want.why.miss", name, ns.Incoming.Givers(buff))
-            end
-        end
-    end
-    return out
-end
-function ns.Incoming.Fake(arg)
-    local rest = string.lower(string.gsub(arg or "", "^%s*(.-)%s*$", "%1"))
-    if rest == "off" then
-        ns.Group.SetFake(nil)
-        ns.say(ns.T("want.fake.off"))
-        return
-    end
-    local even = true
-    if string.sub(rest, 1, 3) == "rnd" then
-        even = false
-        rest = string.gsub(string.sub(rest, 4), "^%s*", "")
-    end
-    local size = tonumber(rest) or 25
-    if size < 1 then size = 1 end
-    if size > 40 then size = 40 end
-    ns.Group.SetFake(ns.Group.MakeFake(size, even))
-    ns.say(ns.T("want.fake.on", size))
-    ns.say(ns.T("want.fake.list", ns.Incoming.RosterLine()))
+function ns.Incoming.IsFake()
+    return ns.Group.Fake() ~= nil
 end
 ns.Group.OnChange(function()
     if ns.buffbar and ns.buffbar.Update then ns.buffbar:Update() end

@@ -1,0 +1,11 @@
+local _, ns = ...
+ns.locales = ns.locales or {}
+ns.locales.enUS = ns.locales.enUS or {}
+ns.locales.enUS.widget = ns.locales.enUS.widget or {}
+local L = ns.locales.enUS.widget
+L.druid_bear_rage       = "Rage and Maul"
+L.druid_bear_rage_one   = "cell 1x1"
+L.druid_bear_rage_queue = "number and Maul 2x1"
+L.druid_bear_rage_bar   = "bar 3x1"
+L.druid_bear_rage_info  = "Bear rage and the Maul queue.\nA dim number — less rage than Mangle costs. Gold with a glowing Maul — time to dump rage into Maul, or Clearcasting is up.\nGreen border — Maul is queued. Yellow — after it there is not enough for Mangle.\nThe bar has marks at the costs of Lacerate and Mangle.\nClicking Maul queues it.\nEmpty outside Bear Form, and out of combat with no rage."
+L.dbr_clarity           = "%s: %s is free"
